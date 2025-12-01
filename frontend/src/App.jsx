@@ -6,6 +6,7 @@ import { java } from "@codemirror/lang-java";
 import { cpp } from "@codemirror/lang-cpp";
 import { oneDark } from "@codemirror/theme-one-dark";
 import axios from "axios";
+import { detectLanguage } from "./utils/detectLanguage";
 
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -82,8 +83,26 @@ function App() {
             width="100%"
             theme={oneDark}
             extensions={[languageExtensions[language]]}
-            onChange={(value) => setCode(value)}
-            style={{ fontFamily: '"Fira Code", monospace', fontSize: 13 }}
+            onChange={(value) => {
+              setCode(value);
+
+              // Auto-detect language
+              const detected = detectLanguage(value);
+
+              if (detected !== language) {
+                setLanguage(detected);
+              }
+            }}
+            style={{
+              fontFamily: '"Fira Code", "Fira Mono", monospace',
+              fontSize: 12,
+              borderRadius: "5px",
+            }}
+            basicSetup={{
+              lineNumbers: true,
+              highlightActiveLine: true,
+              autocompletion: true,
+            }}
           />
         </div>
 
