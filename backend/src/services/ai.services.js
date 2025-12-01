@@ -1,4 +1,4 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_KEY);
 
@@ -21,39 +21,26 @@ IMPORTANT HARD RULES:
 - Use the SAME programming language as the user's input.
 - DO NOT restate the prompt or re-explain the code.
 
-STRICT FORMAT (DO NOT MODIFY OR ADD ANYTHING):
+STRICT FORMAT:
 
 ### 1. Errors Found
-- Bullet-point list of actual issues ONLY:
-  - bugs
-  - logic errors
-  - missing validation
-  - edge cases
-  - security issues
-  - inefficiencies
-  - bad coding practices
+- List the actual issues ONLY.
 
 ### 2. Recommended Fixes
-- Bullet-point list of DIRECT, actionable fixes.
-- Each fix must correspond to an error in section 1.
+- Provide actionable fixes for each error.
 
 ### 3. Impact of Fixes
-- Bullet-point list explaining how each fix improves:
-  - correctness
-  - reliability
-  - performance
-  - maintainability
+- Explain improvements in correctness, reliability, performance, maintainability.
 
 ### 4. Corrected Full Code
-Return ONLY ONE fenced code block in this exact format:
-
+Return ONLY ONE fenced code block:
 \`\`\`<language>
 <corrected full code>
 \`\`\`
   `,
 });
 
-async function generateContent(code, language) {
+export default async function generateContent(code, language) {
   const prompt = `
 The following code is written in ${language}. Review it using STRICTLY the required 4-section format.
 
@@ -65,8 +52,7 @@ ${code}
 
   const result = await model.generateContent(prompt);
   const raw = result.response.text();
-  const cleaned = sanitizeReview(raw);
-  return cleaned;
+  return sanitizeReview(raw);
 }
 
 function sanitizeReview(markdown) {
@@ -76,7 +62,7 @@ function sanitizeReview(markdown) {
   let inSection4 = false;
 
   for (let line of lines) {
-    // Detect heading
+    // Detect Section 4 heading
     if (line.trim().startsWith("### 4.")) {
       inSection4 = true;
     }
@@ -84,23 +70,22 @@ function sanitizeReview(markdown) {
     // Detect fenced code blocks
     if (line.trim().startsWith("```")) {
       if (!inSection4) {
-        // Skip code blocks in sections 1-3
+        // skip code in sections 1–3
         inCodeBlock = !inCodeBlock;
         continue;
       } else {
-        // Allow code blocks only in section 4
         cleaned.push(line);
         inCodeBlock = !inCodeBlock;
         continue;
       }
     }
 
-    // Skip lines inside code blocks in sections 1-3
+    // Skip lines in code blocks within sections 1–3
     if (inCodeBlock && !inSection4) continue;
 
-    // Remove inline code in sections 1-3
+    // Remove inline code (backticks) in sections 1–3
     if (!inSection4) {
-      line = line.replace(/`([^`]+)`/g, "$1"); // removes inline backticks
+      line = line.replace(/`([^`]+)`/g, "$1");
     }
 
     cleaned.push(line);
@@ -108,5 +93,3 @@ function sanitizeReview(markdown) {
 
   return cleaned.join("\n");
 }
-
-module.exports = generateContent;
