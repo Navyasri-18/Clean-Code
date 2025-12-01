@@ -35,10 +35,7 @@ function App() {
       setLoading(true);
       setReview("");
 
-      const response = await axios.post("http://localhost:3000/ai/get-review", {
-        code,
-        language,
-      });
+      const response = await axios.post("/api/get-review", { code, language });
 
       setReview(response.data);
       toast.success("Code reviewed successfully!");
