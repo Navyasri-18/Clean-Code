@@ -1,11 +1,11 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import generateContent from "./_services/ai.services.js";
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_KEY);
 
-const model = genAI.getGenerativeModel({
-  model: "gemini-2.5-pro",
-  systemInstruction: `
+async function generateContent(code, language) {
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-pro",
+    systemInstruction: `
 You are an AI code reviewer. 
 You MUST respond ONLY in the following 4 sections and with NO additional text, NO greetings, and NO filler.
 
@@ -38,10 +38,9 @@ Return ONLY ONE fenced code block:
 \`\`\`<language>
 <corrected full code>
 \`\`\`
-  `,
-});
+    `,
+  });
 
-export default async function generateContent(code, language) {
   const prompt = `
 The following code is written in ${language}. Review it using STRICTLY the required 4-section format.
 
@@ -51,9 +50,14 @@ ${code}
 \`\`\`
 `;
 
-  const result = await model.generateContent(prompt);
-  const raw = result.response.text();
-  return sanitizeReview(raw);
+  try {
+    const result = await model.generateContent(prompt);
+    const raw = result.response.text();
+    return sanitizeReview(raw);
+  } catch (err) {
+    console.error("AI Service Error:", err);
+    return "Error generating review.";
+  }
 }
 
 function sanitizeReview(markdown) {
@@ -63,17 +67,16 @@ function sanitizeReview(markdown) {
   let inSection4 = false;
 
   for (let line of lines) {
-    // Detect Section 4 heading
+    // Detect Section 4
     if (line.trim().startsWith("### 4.")) {
       inSection4 = true;
     }
 
-    // Detect fenced code blocks
+    // Fenced code blocks
     if (line.trim().startsWith("```")) {
       if (!inSection4) {
-        // skip code in sections 1–3
         inCodeBlock = !inCodeBlock;
-        continue;
+        continue; // skip
       } else {
         cleaned.push(line);
         inCodeBlock = !inCodeBlock;
@@ -81,10 +84,10 @@ function sanitizeReview(markdown) {
       }
     }
 
-    // Skip lines in code blocks within sections 1–3
+    // skip code inside 1–3
     if (inCodeBlock && !inSection4) continue;
 
-    // Remove inline code (backticks) in sections 1–3
+    // Remove inline backticks in 1–3
     if (!inSection4) {
       line = line.replace(/`([^`]+)`/g, "$1");
     }
@@ -94,3 +97,5 @@ function sanitizeReview(markdown) {
 
   return cleaned.join("\n");
 }
+
+module.exports = generateContent;
