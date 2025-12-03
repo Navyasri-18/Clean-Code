@@ -35,7 +35,10 @@ function App() {
       setLoading(true);
       setReview("");
 
-      const response = await axios.post("/api/get-review", { code, language });
+      const response = await axios.post(
+        "https://clean-code-lv31.onrender.com/ai/get-review",
+        { code, language }
+      );
 
       setReview(response.data);
       toast.success("Code reviewed successfully!");
@@ -75,33 +78,32 @@ function App() {
         {/* Code Editor */}
         <div className="flex-1 overflow-auto rounded-md border border-neutral-700">
           <CodeMirror
-  value={code}
-  height="100%"
-  width="100%"
-  theme={oneDark}
-  extensions={[languageExtensions[language]]}
-  onChange={(value) => {
-    setCode(value);
+            value={code}
+            height="100%"
+            width="100%"
+            theme={oneDark}
+            extensions={[languageExtensions[language]]}
+            onChange={(value) => {
+              setCode(value);
 
-    // Auto-detect language
-    const detected = detectLanguage(value);
+              // Auto-detect language
+              const detected = detectLanguage(value);
 
-    if (detected !== language) {
-      setLanguage(detected);
-    }
-  }}
-  style={{
-    fontFamily: '"Fira Code", "Fira Mono", monospace',
-    fontSize: 12,
-    borderRadius: "5px",
-  }}
-  basicSetup={{
-    lineNumbers: true,
-    highlightActiveLine: true,
-    autocompletion: true,
-  }}
-/>
-
+              if (detected !== language) {
+                setLanguage(detected);
+              }
+            }}
+            style={{
+              fontFamily: '"Fira Code", "Fira Mono", monospace',
+              fontSize: 12,
+              borderRadius: "5px",
+            }}
+            basicSetup={{
+              lineNumbers: true,
+              highlightActiveLine: true,
+              autocompletion: true,
+            }}
+          />
         </div>
 
         {/* Review Button */}
